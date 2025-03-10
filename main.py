@@ -1,12 +1,5 @@
-"""
-Calorie Tracking System
-
-This module implements a GUI application for tracking daily calorie intake.
-It allows users to log meals, view daily intake, set goals, and generate reports.
-"""
-
 import tkinter as tk
-from tkinter import messagebox, simpledialog, filedialog
+from tkinter import messagebox, simpledialog
 from tkcalendar import DateEntry
 import mysql.connector
 from datetime import datetime, date, timedelta
@@ -18,10 +11,7 @@ import csv
 load_dotenv()
 
 class CalorieTracker:
-    """Main class for the Calorie Tracking System application."""
-
     def __init__(self, master):
-        """Initialize the CalorieTracker application."""
         self.master = master
         master.title("Calorie Tracking System")
 
@@ -35,7 +25,6 @@ class CalorieTracker:
         self.calorie_goal = self.get_calorie_goal()
 
     def connect_to_database(self):
-        """Establish a connection to the MySQL database."""
         try:
             return mysql.connector.connect(
                 host=os.getenv("DB_HOST"),
@@ -48,7 +37,6 @@ class CalorieTracker:
             return None
 
     def create_gui_elements(self):
-        """Create and arrange GUI elements for the application."""
         labels = ["Meal:", "Calories:", "Date and Time:"]
         for label in labels:
             tk.Label(self.master, text=label).pack()
@@ -66,6 +54,7 @@ class CalorieTracker:
             ("Add Meal", self.add_meal),
             ("View Today's Meals", self.view_meals),
             ("Visualize Weekly Calories", self.visualize_weekly_calories),
+            ("Visualize Monthly Calories", self.visualize_monthly_calories),
             ("Set Calorie Goal", self.set_calorie_goal),
             ("View Calorie Goal", self.view_calorie_goal),
             ("Export Data", self.export_data),
@@ -120,7 +109,12 @@ class CalorieTracker:
     def visualize_weekly_calories(self):
         visualizer = CalorieVisualizer()
         visualizer.plot_weekly_calories()
-        messagebox.showinfo("Visualization", "Weekly calorie chart has been saved as 'weekly_calories.png'")
+        messagebox.showinfo("Visualization", "Weekly calorie chart has been saved as 'calorie_intake_7_days.png'")
+
+    def visualize_monthly_calories(self):
+        visualizer = CalorieVisualizer()
+        visualizer.plot_monthly_calories()
+        messagebox.showinfo("Visualization", "Monthly calorie chart has been saved as 'calorie_intake_30_days.png'")
 
     def set_calorie_goal(self):
         goal = simpledialog.askinteger("Calorie Goal", "Enter your daily calorie goal:")
