@@ -1,19 +1,15 @@
 import matplotlib.pyplot as plt
-import mysql.connector
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from datetime import datetime, timedelta
+import mysql.connector
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class CalorieVisualizer:
-    def __init__(self):
-        self.db = mysql.connector.connect(
-            host=os.getenv("DB_HOST"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            database=os.getenv("DB_NAME")
-        )
+    def __init__(self, db_connection):
+        self.db = db_connection
         self.cursor = self.db.cursor(buffered=True)
 
     def get_data(self, days):
@@ -29,28 +25,26 @@ class CalorieVisualizer:
         self.cursor.execute(query, (start_date, end_date))
         return self.cursor.fetchall()
 
-    def plot_calories(self, days):
+    def plot_calories(self, frame, days):
         data = self.get_data(days)
         dates = [row[0] for row in data]
         calories = [row[1] for row in data]
 
-        plt.figure(figsize=(12, 6))
-        plt.bar(dates, calories)
-        plt.title(f"Calorie Intake Over the Last {days} Days")
-        plt.xlabel("Date")
-        plt.ylabel("Calories")
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.bar(dates, calories)
+        ax.set_title(f"Calorie Intake Over the Last {days} Days")
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Calories")
         plt.xticks(rotation=45)
         plt.tight_layout()
-        plt.savefig(f"calorie_intake_{days}_days.png")
-        plt.close()
 
-    def plot_weekly_calories(self):
-        self.plot_calories(7)
+        canvas = FigureCanvasTkAgg(fig, master=frame)
+        canvas_widget = canvas.get_tk_widget()
+        canvas_widget.grid(row=0, column=0, sticky="nsew")
+        canvas.draw()
 
-    def plot_monthly_calories(self):
-        self.plot_calories(30)
+    def plot_weekly_calories(self, frame):
+        self.plot_calories(frame, 7)
 
-if __name__ == "__main__":
-    visualizer = CalorieVisualizer()
-    visualizer.plot_weekly_calories()
-    visualizer.plot_monthly_calories()
+    def plot_monthly_calories(self, frame):
+        self.plot_calories(frame, 30)

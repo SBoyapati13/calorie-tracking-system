@@ -107,9 +107,15 @@ class CalorieTracker(tk.Tk):
         frame = ttk.Frame(self.visualize_tab, padding="20")
         frame.grid(row=0, column=0, sticky="nsew")
         frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(1, weight=1)
 
-        ttk.Button(frame, text="Visualize Weekly Calories", command=self.visualize_weekly_calories).grid(row=0, column=0, pady=10)
-        ttk.Button(frame, text="Visualize Monthly Calories", command=self.visualize_monthly_calories).grid(row=1, column=0, pady=10)
+        self.visualizer = CalorieVisualizer(self.db)
+
+        ttk.Button(frame, text="Visualize Weekly Calories", command=lambda: self.visualize_weekly_calories(frame)).grid(row=0, column=0, pady=10)
+        ttk.Button(frame, text="Visualize Monthly Calories", command=lambda: self.visualize_monthly_calories(frame)).grid(row=0, column=1, pady=10)
+
+        self.graph_frame = ttk.Frame(frame)
+        self.graph_frame.grid(row=1, column=0, columnspan=2, sticky="nsew")
 
     def create_goals_tab(self):
         frame = ttk.Frame(self.goals_tab, padding="20")
@@ -176,15 +182,15 @@ class CalorieTracker(tk.Tk):
         else:
             self.show_message("Please select a meal to delete", "warning")
 
-    def visualize_weekly_calories(self):
-        visualizer = CalorieVisualizer()
-        visualizer.plot_weekly_calories()
-        self.show_message("Weekly calorie chart has been saved as 'calorie_intake_7_days.png'", "info")
+    def visualize_weekly_calories(self, frame):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.visualizer.plot_weekly_calories(self.graph_frame)
 
-    def visualize_monthly_calories(self):
-        visualizer = CalorieVisualizer()
-        visualizer.plot_monthly_calories()
-        self.show_message("Monthly calorie chart has been saved as 'calorie_intake_30_days.png'", "info")
+    def visualize_monthly_calories(self, frame):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.visualizer.plot_monthly_calories(self.graph_frame)
 
     def set_calorie_goal(self):
         goal = simpledialog.askinteger("Calorie Goal", "Enter your daily calorie goal:")
