@@ -4,6 +4,7 @@ import mysql.connector
 from datetime import date
 import os
 from dotenv import load_dotenv
+from visualizer import CalorieVisualizer
 
 load_dotenv()
 
@@ -42,6 +43,9 @@ class CalorieTracker:
         self.view_button = tk.Button(master, text="View Today's Meals", command=self.view_meals)
         self.view_button.pack()
 
+        self.visualize_button = tk.Button(master, text="Visualize Weekly Calories", command=self.visualize_weekly_calories)
+        self.visualize_button.pack()
+
     def add_meal(self):
         meal = self.meal_entry.get()
         calories = self.calories_entry.get()
@@ -76,6 +80,11 @@ class CalorieTracker:
             messagebox.showinfo("Today's Meals", f"{meal_list}\n\nTotal Calories: {total_calories}")
         else:
             messagebox.showinfo("Today's Meals", "No meals logged for today")
+
+    def visualize_weekly_calories(self):
+        visualizer = CalorieVisualizer()
+        visualizer.plot_weekly_calories()
+        messagebox.showinfo("Visualization", "Weekly calorie chart has been saved as 'weekly_calories.png'")
 
 if __name__ == "__main__":
     root = tk.Tk()

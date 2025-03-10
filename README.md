@@ -1,11 +1,12 @@
 # Calorie Tracking System
 
-An interactive calorie tracking system built with Python and MySQL, featuring a Tkinter GUI for efficient meal logging and calorie intake tracking.
+An interactive calorie tracking system built with Python and MySQL, featuring a Tkinter GUI for efficient meal logging and calorie intake tracking. Now with data visualization!
 
 ## Features
 
 - Log meals with calorie information
 - View daily meal logs and total calorie intake
+- Visualize weekly calorie intake with a bar chart
 - Intuitive GUI for easy interaction
 - MySQL database for persistent storage
 
@@ -42,7 +43,8 @@ Run the application:
 
 python main.py
 
-Use the GUI to add meals and view your daily calorie intake.
+
+Use the GUI to add meals, view your daily calorie intake, and visualize your weekly calorie intake.
 
 ## Contributing
 
