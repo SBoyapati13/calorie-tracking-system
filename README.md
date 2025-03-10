@@ -6,7 +6,7 @@ An interactive calorie tracking system built with Python and MySQL, featuring a 
 
 - Log meals with calorie information and timestamps
 - View daily meal logs with meal times and total calorie intake
-- Visualize weekly calorie intake with a bar chart
+- Visualize weekly and monthly calorie intake with bar charts
 - Set and track daily calorie goals
 - Generate 30-day calorie reports
 - Export data to CSV for further analysis
@@ -46,7 +46,13 @@ Run the application:
 
 python main.py
 
-Use the GUI to add meals, view your daily calorie intake, visualize your weekly calorie intake, set and track calorie goals, generate reports, and export data.
+Use the GUI to:
+- Add meals with calorie information
+- View daily meal logs
+- Visualize weekly and monthly calorie intake
+- Set and track calorie goals
+- Generate reports
+- Export data to CSV
 
 ## Contributing
 
