@@ -1,10 +1,3 @@
-"""
-Calorie Tracking System
-
-This module implements a GUI application for tracking daily calorie intake
-using Tkinter and MySQL.
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkcalendar import DateEntry
@@ -17,40 +10,25 @@ import csv
 
 load_dotenv()
 
-class CalorieTracker:
-    """
-    Main application class for the Calorie Tracking System.
-    
-    This class handles the GUI creation and database interactions.
-    """
+class CalorieTracker(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Calorie Tracking System")
+        self.geometry("500x600")
+        self.configure(padx=10, pady=10)
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
 
-    def __init__(self, master):
-        """
-        Initialize the CalorieTracker application.
-
-        Args:
-            master (tk.Tk): The root window for the application.
-        """
-        self.master = master
-        master.title("Calorie Tracking System")
-        master.geometry("600x550")
-
-        self.db = self._connect_to_database()
+        self.db = self.connect_to_database()
         if not self.db:
-            master.destroy()
+            self.destroy()
             return
 
         self.cursor = self.db.cursor(buffered=True)
-        self._create_notebook()
-        self.calorie_goal = self._get_calorie_goal()
+        self.calorie_goal = self.get_calorie_goal()
+        self.create_widgets()
 
-    def _connect_to_database(self):
-        """
-        Establish a connection to the MySQL database.
-
-        Returns:
-            mysql.connector.connection.MySQLConnection or None: Database connection object if successful, None otherwise.
-        """
+    def connect_to_database(self):
         try:
             return mysql.connector.connect(
                 host=os.getenv("DB_HOST"),
@@ -59,13 +37,12 @@ class CalorieTracker:
                 database=os.getenv("DB_NAME")
             )
         except mysql.connector.Error as err:
-            messagebox.showerror("Database Error", f"Error connecting to database: {err}")
+            self.show_message(f"Error connecting to database: {err}", "error")
             return None
 
-    def _create_notebook(self):
-        """Create and set up the main notebook widget for the application."""
-        self.notebook = ttk.Notebook(self.master)
-        self.notebook.pack(expand=True, fill="both", padx=10, pady=10)
+    def create_widgets(self):
+        self.notebook = ttk.Notebook(self)
+        self.notebook.grid(row=0, column=0, sticky="nsew")
 
         self.meal_tab = ttk.Frame(self.notebook)
         self.visualize_tab = ttk.Frame(self.notebook)
@@ -77,21 +54,22 @@ class CalorieTracker:
         self.notebook.add(self.goals_tab, text="Goals")
         self.notebook.add(self.export_tab, text="Export")
 
-        self._create_meal_tab()
-        self._create_visualize_tab()
-        self._create_goals_tab()
-        self._create_export_tab()
+        self.create_meal_tab()
+        self.create_visualize_tab()
+        self.create_goals_tab()
+        self.create_export_tab()
 
-    def _create_meal_tab(self):
-        """Create and set up the Meals tab."""
+    def create_meal_tab(self):
         frame = ttk.Frame(self.meal_tab, padding="20")
-        frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        frame.grid(row=0, column=0, sticky="nsew")
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
 
         ttk.Label(frame, text="Add Meal", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
 
         labels = ["Meal:", "Calories:", "Date:", "Time:"]
         for i, label in enumerate(labels, start=1):
-            ttk.Label(frame, text=label).grid(row=i, column=0, sticky=tk.W, pady=5)
+            ttk.Label(frame, text=label).grid(row=i, column=0, sticky="w", pady=5)
 
         self.meal_entry = ttk.Entry(frame)
         self.calories_entry = ttk.Entry(frame)
@@ -101,84 +79,77 @@ class CalorieTracker:
 
         entries = [self.meal_entry, self.calories_entry, self.datetime_entry, self.time_entry]
         for i, entry in enumerate(entries, start=1):
-            entry.grid(row=i, column=1, sticky=(tk.W, tk.E), pady=5)
+            entry.grid(row=i, column=1, sticky="ew", pady=5)
 
-        ttk.Button(frame, text="Add Meal", command=self._add_meal).grid(row=5, column=0, columnspan=2, pady=10)
+        ttk.Button(frame, text="Add Meal", command=self.add_meal).grid(row=5, column=0, columnspan=2, pady=10)
 
         ttk.Label(frame, text="View Meals", font=("Arial", 14, "bold")).grid(row=6, column=0, columnspan=2, pady=10)
 
         self.meals_tree = ttk.Treeview(frame, columns=("Date", "Time", "Meal", "Calories"), show="headings")
-        self.meals_tree.grid(row=7, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.meals_tree.grid(row=7, column=0, columnspan=2, sticky="nsew")
 
         for col in self.meals_tree["columns"]:
             self.meals_tree.heading(col, text=col)
             self.meals_tree.column(col, width=100)
 
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.meals_tree.yview)
-        scrollbar.grid(row=7, column=2, sticky=(tk.N, tk.S))
+        scrollbar.grid(row=7, column=2, sticky="ns")
         self.meals_tree.configure(yscrollcommand=scrollbar.set)
 
-        ttk.Button(frame, text="View Today's Meals", command=self._view_meals).grid(row=8, column=0, pady=10)
-        ttk.Button(frame, text="Delete Selected", command=self._delete_meal).grid(row=8, column=1, pady=10)
+        ttk.Button(frame, text="View Today's Meals", command=self.view_meals).grid(row=8, column=0, pady=10)
+        ttk.Button(frame, text="Delete Selected", command=self.delete_meal).grid(row=8, column=1, pady=10)
 
-    def _create_visualize_tab(self):
-        """Create and set up the Visualize tab."""
+    def create_visualize_tab(self):
         frame = ttk.Frame(self.visualize_tab, padding="20")
-        frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        frame.grid(row=0, column=0, sticky="nsew")
+        frame.columnconfigure(0, weight=1)
 
-        ttk.Button(frame, text="Visualize Weekly Calories", command=self._visualize_weekly_calories).grid(row=0, column=0, pady=10)
-        ttk.Button(frame, text="Visualize Monthly Calories", command=self._visualize_monthly_calories).grid(row=1, column=0, pady=10)
+        ttk.Button(frame, text="Visualize Weekly Calories", command=self.visualize_weekly_calories).grid(row=0, column=0, pady=10)
+        ttk.Button(frame, text="Visualize Monthly Calories", command=self.visualize_monthly_calories).grid(row=1, column=0, pady=10)
 
-    def _create_goals_tab(self):
-        """Create and set up the Goals tab."""
+    def create_goals_tab(self):
         frame = ttk.Frame(self.goals_tab, padding="20")
-        frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        frame.grid(row=0, column=0, sticky="nsew")
+        frame.columnconfigure(0, weight=1)
 
-        ttk.Button(frame, text="Set Calorie Goal", command=self._set_calorie_goal).grid(row=0, column=0, pady=10)
-        ttk.Button(frame, text="View Calorie Goal", command=self._view_calorie_goal).grid(row=1, column=0, pady=10)
+        ttk.Button(frame, text="Set Calorie Goal", command=self.set_calorie_goal).grid(row=0, column=0, pady=10)
+        ttk.Button(frame, text="View Calorie Goal", command=self.view_calorie_goal).grid(row=1, column=0, pady=10)
 
-    def _create_export_tab(self):
-        """Create and set up the Export tab."""
+    def create_export_tab(self):
         frame = ttk.Frame(self.export_tab, padding="20")
-        frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        frame.grid(row=0, column=0, sticky="nsew")
+        frame.columnconfigure(0, weight=1)
 
-        ttk.Button(frame, text="Export Data", command=self._export_data).grid(row=0, column=0, pady=10)
-        ttk.Button(frame, text="Generate Report", command=self._generate_report).grid(row=1, column=0, pady=10)
+        ttk.Button(frame, text="Export Data", command=self.export_data).grid(row=0, column=0, pady=10)
+        ttk.Button(frame, text="Generate Report", command=self.generate_report).grid(row=1, column=0, pady=10)
 
-    def _add_meal(self):
-        """Add a new meal to the database."""
-        meal = self.meal_entry.get()
-        calories = self.calories_entry.get()
-        meal_date = self.datetime_entry.get_date()
-        meal_time = self.time_entry.get()
+    def add_meal(self):
+        try:
+            meal = self.meal_entry.get()
+            calories = int(self.calories_entry.get())
+            meal_date = self.datetime_entry.get_date()
+            meal_time = datetime.strptime(self.time_entry.get(), "%H:%M").time()
+            meal_datetime = datetime.combine(meal_date, meal_time)
 
-        if meal and calories and meal_time:
-            try:
-                calories = int(calories)
-                meal_datetime = datetime.combine(meal_date, datetime.strptime(meal_time, "%H:%M").time())
-                query = "INSERT INTO meals (datetime, meal, calories) VALUES (%s, %s, %s)"
-                self.cursor.execute(query, (meal_datetime, meal, calories))
-                self.db.commit()
-                messagebox.showinfo("Success", "Meal added successfully!")
-                self._clear_entries()
-                self._view_meals()
-                self._check_calorie_goal()
-            except ValueError:
-                messagebox.showerror("Error", "Calories must be a number and time must be in HH:MM format")
-            except mysql.connector.Error as err:
-                messagebox.showerror("Database Error", f"Error adding meal: {err}")
-        else:
-            messagebox.showerror("Error", "Please enter meal, calories, and time")
+            query = "INSERT INTO meals (datetime, meal, calories) VALUES (%s, %s, %s)"
+            self.cursor.execute(query, (meal_datetime, meal, calories))
+            self.db.commit()
+            self.show_message("Meal added successfully", "info")
+            self.clear_entries()
+            self.view_meals()
+            self.check_calorie_goal()
+        except ValueError:
+            self.show_message("Please enter valid data for all fields", "error")
+        except mysql.connector.Error as err:
+            self.show_message(f"Error adding meal: {err}", "error")
 
-    def _clear_entries(self):
-        """Clear all entry fields in the Add Meal section."""
+    def clear_entries(self):
         self.meal_entry.delete(0, tk.END)
         self.calories_entry.delete(0, tk.END)
         self.time_entry.delete(0, tk.END)
         self.time_entry.insert(0, "HH:MM")
 
-    def _view_meals(self):
-        """Display today's meals in the Treeview widget."""
+    def view_meals(self):
         self.meals_tree.delete(*self.meals_tree.get_children())
         today = date.today()
         query = "SELECT id, datetime, meal, calories FROM meals WHERE DATE(datetime) = %s ORDER BY datetime"
@@ -189,8 +160,7 @@ class CalorieTracker:
             meal_id, meal_datetime, meal, calories = row
             self.meals_tree.insert("", "end", values=(meal_datetime.date(), meal_datetime.strftime('%I:%M %p'), meal, calories), tags=(meal_id,))
 
-    def _delete_meal(self):
-        """Delete the selected meal from the database and Treeview."""
+    def delete_meal(self):
         selected_item = self.meals_tree.selection()
         if selected_item:
             meal_id = self.meals_tree.item(selected_item)['tags'][0]
@@ -198,48 +168,42 @@ class CalorieTracker:
             self.cursor.execute(query, (meal_id,))
             self.db.commit()
             self.meals_tree.delete(selected_item)
-            messagebox.showinfo("Success", "Meal deleted successfully!")
+            self.show_message("Meal deleted successfully", "info")
         else:
-            messagebox.showwarning("Warning", "Please select a meal to delete.")
+            self.show_message("Please select a meal to delete", "warning")
 
-    def _visualize_weekly_calories(self):
-        """Generate and display a weekly calorie intake chart."""
+    def visualize_weekly_calories(self):
         visualizer = CalorieVisualizer()
         visualizer.plot_weekly_calories()
-        messagebox.showinfo("Visualization", "Weekly calorie chart has been saved as 'calorie_intake_7_days.png'")
+        self.show_message("Weekly calorie chart has been saved as 'calorie_intake_7_days.png'", "info")
 
-    def _visualize_monthly_calories(self):
-        """Generate and display a monthly calorie intake chart."""
+    def visualize_monthly_calories(self):
         visualizer = CalorieVisualizer()
         visualizer.plot_monthly_calories()
-        messagebox.showinfo("Visualization", "Monthly calorie chart has been saved as 'calorie_intake_30_days.png'")
+        self.show_message("Monthly calorie chart has been saved as 'calorie_intake_30_days.png'", "info")
 
-    def _set_calorie_goal(self):
-        """Set a daily calorie goal."""
+    def set_calorie_goal(self):
         goal = simpledialog.askinteger("Calorie Goal", "Enter your daily calorie goal:")
         if goal:
             self.calorie_goal = goal
             query = "INSERT INTO calorie_goals (goal) VALUES (%s) ON DUPLICATE KEY UPDATE goal = %s"
             self.cursor.execute(query, (goal, goal))
             self.db.commit()
-            messagebox.showinfo("Success", f"Calorie goal set to {goal}")
+            self.show_message(f"Calorie goal set to {goal}", "info")
 
-    def _view_calorie_goal(self):
-        """Display the current daily calorie goal."""
+    def view_calorie_goal(self):
         if self.calorie_goal:
-            messagebox.showinfo("Calorie Goal", f"Your current daily calorie goal is {self.calorie_goal}")
+            self.show_message(f"Your current daily calorie goal is {self.calorie_goal}", "info")
         else:
-            messagebox.showinfo("Calorie Goal", "No calorie goal set")
+            self.show_message("No calorie goal set", "info")
 
-    def _get_calorie_goal(self):
-        """Retrieve the current calorie goal from the database."""
+    def get_calorie_goal(self):
         query = "SELECT goal FROM calorie_goals ORDER BY id DESC LIMIT 1"
         self.cursor.execute(query)
         result = self.cursor.fetchone()
         return result[0] if result else None
 
-    def _check_calorie_goal(self):
-        """Check if the daily calorie goal has been exceeded."""
+    def check_calorie_goal(self):
         if self.calorie_goal:
             today = date.today()
             query = "SELECT SUM(calories) FROM meals WHERE DATE(datetime) = %s"
@@ -247,10 +211,9 @@ class CalorieTracker:
             result = self.cursor.fetchone()
             total_calories = result[0] if result[0] else 0
             if total_calories > self.calorie_goal:
-                messagebox.showwarning("Goal Exceeded", f"You've exceeded your daily calorie goal of {self.calorie_goal}")
+                self.show_message(f"You've exceeded your daily calorie goal of {self.calorie_goal}", "warning")
 
-    def _export_data(self):
-        """Export meal data to a CSV file."""
+    def export_data(self):
         file_path = filedialog.asksaveasfilename(defaultextension=".csv")
         if file_path:
             query = "SELECT datetime, meal, calories FROM meals ORDER BY datetime"
@@ -263,10 +226,9 @@ class CalorieTracker:
                 for row in results:
                     writer.writerow([row[0].date(), row[0].strftime('%I:%M %p'), row[1], row[2]])
 
-            messagebox.showinfo("Export Successful", f"Data exported to {file_path}")
+            self.show_message(f"Data exported to {file_path}", "info")
 
-    def _generate_report(self):
-        """Generate and display a 30-day calorie intake report."""
+    def generate_report(self):
         end_date = date.today()
         start_date = end_date - timedelta(days=30)
         
@@ -290,10 +252,16 @@ class CalorieTracker:
         for row in results:
             report += f"{row[0]}: {row[1]} calories\n"
 
-        messagebox.showinfo("30-Day Calorie Report", report)
+        self.show_message(report, "info")
 
+    def show_message(self, message, message_type):
+        if message_type == "error":
+            messagebox.showerror("Error", message)
+        elif message_type == "info":
+            messagebox.showinfo("Info", message)
+        elif message_type == "warning":
+            messagebox.showwarning("Warning", message)
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = CalorieTracker(root)
-    root.mainloop()
+    app = CalorieTracker()
+    app.mainloop()
