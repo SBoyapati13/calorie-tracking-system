@@ -27,16 +27,20 @@ pip install -r requirements.txt
 
 4. Set up the MySQL database:
 - Create a database named `calorie_tracker`
-- Run the SQL script in `database_setup.sql` to create the necessary table
+- Run the SQL script in `database_setup.sql` to create the necessary table and index
 
-5. Configure the `.env` file with your MySQL credentials
+5. Configure the `.env` file with your MySQL credentials:
+
+DB_HOST=localhost
+DB_USER=your_username
+DB_PASSWORD=your_password
+DB_NAME=calorie_tracker
 
 ## Usage
 
 Run the application:
 
 python main.py
-
 
 Use the GUI to add meals and view your daily calorie intake.
 
