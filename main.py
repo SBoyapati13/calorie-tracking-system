@@ -1,5 +1,12 @@
+"""
+Calorie Tracking System
+
+This module implements a GUI application for tracking daily calorie intake.
+It allows users to log meals, view daily intake, set goals, and generate reports.
+"""
+
 import tkinter as tk
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox, simpledialog, filedialog
 from tkcalendar import DateEntry
 import mysql.connector
 from datetime import datetime, date, timedelta
@@ -11,7 +18,10 @@ import csv
 load_dotenv()
 
 class CalorieTracker:
+    """Main class for the Calorie Tracking System application."""
+
     def __init__(self, master):
+        """Initialize the CalorieTracker application."""
         self.master = master
         master.title("Calorie Tracking System")
 
@@ -25,6 +35,7 @@ class CalorieTracker:
         self.calorie_goal = self.get_calorie_goal()
 
     def connect_to_database(self):
+        """Establish a connection to the MySQL database."""
         try:
             return mysql.connector.connect(
                 host=os.getenv("DB_HOST"),
@@ -37,6 +48,7 @@ class CalorieTracker:
             return None
 
     def create_gui_elements(self):
+        """Create and arrange GUI elements for the application."""
         labels = ["Meal:", "Calories:", "Date and Time:"]
         for label in labels:
             tk.Label(self.master, text=label).pack()
