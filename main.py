@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog, filedialog
 import mysql.connector
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import os
 from dotenv import load_dotenv
 from visualizer import CalorieVisualizer
