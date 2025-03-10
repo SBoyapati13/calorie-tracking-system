@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog
+from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkcalendar import DateEntry
 import mysql.connector
 from datetime import datetime, date, timedelta
@@ -14,6 +14,7 @@ class CalorieTracker:
     def __init__(self, master):
         self.master = master
         master.title("Calorie Tracking System")
+        master.geometry("500x400")
 
         self.db = self.connect_to_database()
         if not self.db:
@@ -21,7 +22,7 @@ class CalorieTracker:
             return
 
         self.cursor = self.db.cursor(buffered=True)
-        self.create_gui_elements()
+        self.create_notebook()
         self.calorie_goal = self.get_calorie_goal()
 
     def connect_to_database(self):
@@ -36,33 +37,64 @@ class CalorieTracker:
             messagebox.showerror("Database Error", f"Error connecting to database: {err}")
             return None
 
-    def create_gui_elements(self):
-        labels = ["Meal:", "Calories:", "Date and Time:"]
-        for label in labels:
-            tk.Label(self.master, text=label).pack()
+    def create_notebook(self):
+        self.notebook = ttk.Notebook(self.master)
+        self.notebook.pack(expand=True, fill="both")
 
-        self.meal_entry = tk.Entry(self.master)
-        self.calories_entry = tk.Entry(self.master)
-        self.datetime_entry = DateEntry(self.master, width=12, background="darkblue", foreground="white", borderwidth=2)
-        self.time_entry = tk.Entry(self.master)
+        self.add_meal_tab = ttk.Frame(self.notebook)
+        self.view_meals_tab = ttk.Frame(self.notebook)
+        self.visualize_tab = ttk.Frame(self.notebook)
+        self.goals_tab = ttk.Frame(self.notebook)
+        self.export_tab = ttk.Frame(self.notebook)
+
+        self.notebook.add(self.add_meal_tab, text="Add Meal")
+        self.notebook.add(self.view_meals_tab, text="View Meals")
+        self.notebook.add(self.visualize_tab, text="Visualize")
+        self.notebook.add(self.goals_tab, text="Goals")
+        self.notebook.add(self.export_tab, text="Export")
+
+        self.create_add_meal_tab()
+        self.create_view_meals_tab()
+        self.create_visualize_tab()
+        self.create_goals_tab()
+        self.create_export_tab()
+
+    def create_add_meal_tab(self):
+        ttk.Label(self.add_meal_tab, text="Meal:").grid(row=0, column=0, padx=5, pady=5)
+        self.meal_entry = ttk.Entry(self.add_meal_tab)
+        self.meal_entry.grid(row=0, column=1, padx=5, pady=5)
+
+        ttk.Label(self.add_meal_tab, text="Calories:").grid(row=1, column=0, padx=5, pady=5)
+        self.calories_entry = ttk.Entry(self.add_meal_tab)
+        self.calories_entry.grid(row=1, column=1, padx=5, pady=5)
+
+        ttk.Label(self.add_meal_tab, text="Date:").grid(row=2, column=0, padx=5, pady=5)
+        self.datetime_entry = DateEntry(self.add_meal_tab, width=12, background="darkblue", foreground="white", borderwidth=2)
+        self.datetime_entry.grid(row=2, column=1, padx=5, pady=5)
+
+        ttk.Label(self.add_meal_tab, text="Time:").grid(row=3, column=0, padx=5, pady=5)
+        self.time_entry = ttk.Entry(self.add_meal_tab)
         self.time_entry.insert(0, "HH:MM")
+        self.time_entry.grid(row=3, column=1, padx=5, pady=5)
 
-        for widget in (self.meal_entry, self.calories_entry, self.datetime_entry, self.time_entry):
-            widget.pack()
+        ttk.Button(self.add_meal_tab, text="Add Meal", command=self.add_meal).grid(row=4, column=0, columnspan=2, pady=10)
 
-        buttons = [
-            ("Add Meal", self.add_meal),
-            ("View Today's Meals", self.view_meals),
-            ("Visualize Weekly Calories", self.visualize_weekly_calories),
-            ("Visualize Monthly Calories", self.visualize_monthly_calories),
-            ("Set Calorie Goal", self.set_calorie_goal),
-            ("View Calorie Goal", self.view_calorie_goal),
-            ("Export Data", self.export_data),
-            ("Generate Report", self.generate_report)
-        ]
+    def create_view_meals_tab(self):
+        self.meals_text = tk.Text(self.view_meals_tab, height=15, width=50)
+        self.meals_text.pack(padx=10, pady=10)
+        ttk.Button(self.view_meals_tab, text="View Today's Meals", command=self.view_meals).pack(pady=5)
 
-        for text, command in buttons:
-            tk.Button(self.master, text=text, command=command).pack()
+    def create_visualize_tab(self):
+        ttk.Button(self.visualize_tab, text="Visualize Weekly Calories", command=self.visualize_weekly_calories).pack(pady=10)
+        ttk.Button(self.visualize_tab, text="Visualize Monthly Calories", command=self.visualize_monthly_calories).pack(pady=10)
+
+    def create_goals_tab(self):
+        ttk.Button(self.goals_tab, text="Set Calorie Goal", command=self.set_calorie_goal).pack(pady=10)
+        ttk.Button(self.goals_tab, text="View Calorie Goal", command=self.view_calorie_goal).pack(pady=10)
+
+    def create_export_tab(self):
+        ttk.Button(self.export_tab, text="Export Data", command=self.export_data).pack(pady=10)
+        ttk.Button(self.export_tab, text="Generate Report", command=self.generate_report).pack(pady=10)
 
     def add_meal(self):
         meal = self.meal_entry.get()
@@ -99,12 +131,14 @@ class CalorieTracker:
         self.cursor.execute(query, (today,))
         results = self.cursor.fetchall()
 
+        self.meals_text.delete(1.0, tk.END)
         if results:
-            meal_list = "\n".join([f"{meal_datetime.strftime('%I:%M %p')}: {meal} - {calories} calories" for meal_datetime, meal, calories in results])
+            for meal_datetime, meal, calories in results:
+                self.meals_text.insert(tk.END, f"{meal_datetime.strftime('%I:%M %p')}: {meal} - {calories} calories\n")
             total_calories = sum(calories for _, _, calories in results)
-            messagebox.showinfo("Today's Meals", f"{meal_list}\n\nTotal Calories: {total_calories}")
+            self.meals_text.insert(tk.END, f"\nTotal Calories: {total_calories}")
         else:
-            messagebox.showinfo("Today's Meals", "No meals logged for today")
+            self.meals_text.insert(tk.END, "No meals logged for today")
 
     def visualize_weekly_calories(self):
         visualizer = CalorieVisualizer()
