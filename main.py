@@ -14,7 +14,7 @@ class CalorieTracker:
     def __init__(self, master):
         self.master = master
         master.title("Calorie Tracking System")
-        master.geometry("500x400")
+        master.geometry("600x450")
 
         self.db = self.connect_to_database()
         if not self.db:
@@ -39,7 +39,7 @@ class CalorieTracker:
 
     def create_notebook(self):
         self.notebook = ttk.Notebook(self.master)
-        self.notebook.pack(expand=True, fill="both")
+        self.notebook.pack(expand=True, fill="both", padx=10, pady=10)
 
         self.add_meal_tab = ttk.Frame(self.notebook)
         self.view_meals_tab = ttk.Frame(self.notebook)
@@ -60,41 +60,68 @@ class CalorieTracker:
         self.create_export_tab()
 
     def create_add_meal_tab(self):
-        ttk.Label(self.add_meal_tab, text="Meal:").grid(row=0, column=0, padx=5, pady=5)
-        self.meal_entry = ttk.Entry(self.add_meal_tab)
-        self.meal_entry.grid(row=0, column=1, padx=5, pady=5)
+        frame = ttk.Frame(self.add_meal_tab, padding="10")
+        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
 
-        ttk.Label(self.add_meal_tab, text="Calories:").grid(row=1, column=0, padx=5, pady=5)
-        self.calories_entry = ttk.Entry(self.add_meal_tab)
-        self.calories_entry.grid(row=1, column=1, padx=5, pady=5)
+        ttk.Label(frame, text="Meal:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.meal_entry = ttk.Entry(frame)
+        self.meal_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
 
-        ttk.Label(self.add_meal_tab, text="Date:").grid(row=2, column=0, padx=5, pady=5)
-        self.datetime_entry = DateEntry(self.add_meal_tab, width=12, background="darkblue", foreground="white", borderwidth=2)
-        self.datetime_entry.grid(row=2, column=1, padx=5, pady=5)
+        ttk.Label(frame, text="Calories:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.calories_entry = ttk.Entry(frame)
+        self.calories_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5)
 
-        ttk.Label(self.add_meal_tab, text="Time:").grid(row=3, column=0, padx=5, pady=5)
-        self.time_entry = ttk.Entry(self.add_meal_tab)
+        ttk.Label(frame, text="Date:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.datetime_entry = DateEntry(frame, width=12, background="darkblue", foreground="white", borderwidth=2)
+        self.datetime_entry.grid(row=2, column=1, sticky=(tk.W, tk.E), pady=5)
+
+        ttk.Label(frame, text="Time:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.time_entry = ttk.Entry(frame)
         self.time_entry.insert(0, "HH:MM")
-        self.time_entry.grid(row=3, column=1, padx=5, pady=5)
+        self.time_entry.grid(row=3, column=1, sticky=(tk.W, tk.E), pady=5)
 
-        ttk.Button(self.add_meal_tab, text="Add Meal", command=self.add_meal).grid(row=4, column=0, columnspan=2, pady=10)
+        ttk.Button(frame, text="Add Meal", command=self.add_meal).grid(row=4, column=0, columnspan=2, pady=10)
 
     def create_view_meals_tab(self):
-        self.meals_text = tk.Text(self.view_meals_tab, height=15, width=50)
-        self.meals_text.pack(padx=10, pady=10)
-        ttk.Button(self.view_meals_tab, text="View Today's Meals", command=self.view_meals).pack(pady=5)
+        frame = ttk.Frame(self.view_meals_tab, padding="10")
+        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(0, weight=1)
+
+        self.meals_text = tk.Text(frame, height=15, width=50)
+        self.meals_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.meals_text.yview)
+        scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
+        self.meals_text.configure(yscrollcommand=scrollbar.set)
+
+        ttk.Button(frame, text="View Today's Meals", command=self.view_meals).grid(row=1, column=0, columnspan=2, pady=10)
 
     def create_visualize_tab(self):
-        ttk.Button(self.visualize_tab, text="Visualize Weekly Calories", command=self.visualize_weekly_calories).pack(pady=10)
-        ttk.Button(self.visualize_tab, text="Visualize Monthly Calories", command=self.visualize_monthly_calories).pack(pady=10)
+        frame = ttk.Frame(self.visualize_tab, padding="10")
+        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        frame.columnconfigure(0, weight=1)
+
+        ttk.Button(frame, text="Visualize Weekly Calories", command=self.visualize_weekly_calories).grid(row=0, column=0, pady=10)
+        ttk.Button(frame, text="Visualize Monthly Calories", command=self.visualize_monthly_calories).grid(row=1, column=0, pady=10)
 
     def create_goals_tab(self):
-        ttk.Button(self.goals_tab, text="Set Calorie Goal", command=self.set_calorie_goal).pack(pady=10)
-        ttk.Button(self.goals_tab, text="View Calorie Goal", command=self.view_calorie_goal).pack(pady=10)
+        frame = ttk.Frame(self.goals_tab, padding="10")
+        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        frame.columnconfigure(0, weight=1)
+
+        ttk.Button(frame, text="Set Calorie Goal", command=self.set_calorie_goal).grid(row=0, column=0, pady=10)
+        ttk.Button(frame, text="View Calorie Goal", command=self.view_calorie_goal).grid(row=1, column=0, pady=10)
 
     def create_export_tab(self):
-        ttk.Button(self.export_tab, text="Export Data", command=self.export_data).pack(pady=10)
-        ttk.Button(self.export_tab, text="Generate Report", command=self.generate_report).pack(pady=10)
+        frame = ttk.Frame(self.export_tab, padding="10")
+        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        frame.columnconfigure(0, weight=1)
+
+        ttk.Button(frame, text="Export Data", command=self.export_data).grid(row=0, column=0, pady=10)
+        ttk.Button(frame, text="Generate Report", command=self.generate_report).grid(row=1, column=0, pady=10)
 
     def add_meal(self):
         meal = self.meal_entry.get()
