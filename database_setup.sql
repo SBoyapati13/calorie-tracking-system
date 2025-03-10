@@ -9,3 +9,9 @@ CREATE TABLE IF NOT EXISTS meals (
 );
 
 CREATE INDEX idx_date ON meals(date);
+
+CREATE TABLE IF NOT EXISTS calorie_goals (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    goal INT,
+    UNIQUE KEY unique_goal (goal)
+);
