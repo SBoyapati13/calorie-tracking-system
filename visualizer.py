@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
 import mysql.connector
+from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 
@@ -16,28 +16,41 @@ class CalorieVisualizer:
         )
         self.cursor = self.db.cursor(buffered=True)
 
-    def get_weekly_data(self):
+    def get_data(self, days):
         end_date = datetime.now().date()
-        start_date = end_date - timedelta(days=6)
-        query = "SELECT date, SUM(calories) FROM meals WHERE date BETWEEN %s AND %s GROUP BY date ORDER BY date"
+        start_date = end_date - timedelta(days=days-1)
+        query = """
+        SELECT DATE(datetime) as date, SUM(calories) as total_calories
+        FROM meals
+        WHERE DATE(datetime) BETWEEN %s AND %s
+        GROUP BY DATE(datetime)
+        ORDER BY DATE(datetime)
+        """
         self.cursor.execute(query, (start_date, end_date))
         return self.cursor.fetchall()
 
-    def plot_weekly_calories(self):
-        data = self.get_weekly_data()
+    def plot_calories(self, days):
+        data = self.get_data(days)
         dates = [row[0] for row in data]
         calories = [row[1] for row in data]
 
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(12, 6))
         plt.bar(dates, calories)
-        plt.title("Weekly Calorie Intake")
+        plt.title(f"Calorie Intake Over the Last {days} Days")
         plt.xlabel("Date")
         plt.ylabel("Calories")
         plt.xticks(rotation=45)
         plt.tight_layout()
-        plt.savefig("weekly_calories.png")
+        plt.savefig(f"calorie_intake_{days}_days.png")
         plt.close()
+
+    def plot_weekly_calories(self):
+        self.plot_calories(7)
+
+    def plot_monthly_calories(self):
+        self.plot_calories(30)
 
 if __name__ == "__main__":
     visualizer = CalorieVisualizer()
     visualizer.plot_weekly_calories()
+    visualizer.plot_monthly_calories()
