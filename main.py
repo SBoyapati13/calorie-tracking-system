@@ -52,6 +52,12 @@ class CalorieTracker:
         self.view_goal_button = tk.Button(master, text="View Calorie Goal", command=self.view_calorie_goal)
         self.view_goal_button.pack()
 
+        self.export_button = tk.Button(master, text="Export Data", command=self.export_data)
+        self.export_button.pack()
+
+        self.generate_report_button = tk.Button(master, text="Generate Report", command=self.generate_report)
+        self.generate_report_button.pack()
+
         self.calorie_goal = self.get_calorie_goal()
 
     def add_meal(self):
@@ -125,6 +131,46 @@ class CalorieTracker:
             total_calories = result[0] if result[0] else 0
             if total_calories > self.calorie_goal:
                 messagebox.showwarning("Goal Exceeded", f"You've exceeded your daily calorie goal of {self.calorie_goal}")
+
+    def export_data(self):
+        file_path = filedialog.asksaveasfilename(defaultextension=".csv")
+        if file_path:
+            query = "SELECT date, meal, calories FROM meals ORDER BY date"
+            self.cursor.execute(query)
+            results = self.cursor.fetchall()
+
+            with open(file_path, 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(['Date', 'Meal', 'Calories'])
+                writer.writerows(results)
+
+            messagebox.showinfo("Export Successful", f"Data exported to {file_path}")
+
+    def generate_report(self):
+        end_date = date.today()
+        start_date = end_date - timedelta(days=30)
+        
+        query = """
+        SELECT date, SUM(calories) as total_calories
+        FROM meals
+        WHERE date BETWEEN %s AND %s
+        GROUP BY date
+        ORDER BY date
+        """
+        self.cursor.execute(query, (start_date, end_date))
+        results = self.cursor.fetchall()
+
+        total_calories = sum(row[1] for row in results)
+        avg_calories = total_calories / len(results) if results else 0
+
+        report = f"Calorie Report ({start_date} to {end_date}):\n\n"
+        report += f"Total Calories: {total_calories}\n"
+        report += f"Average Daily Calories: {avg_calories:.2f}\n\n"
+        report += "Daily Breakdown:\n"
+        for row in results:
+            report += f"{row[0]}: {row[1]} calories\n"
+
+        messagebox.showinfo("30-Day Calorie Report", report)
 
 if __name__ == "__main__":
     root = tk.Tk()
