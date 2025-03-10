@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog, filedialog
+from tkcalendar import DateEntry
 import mysql.connector
-from datetime import date, timedelta, datetime
+from datetime import datetime, date, timedelta
 import os
 from dotenv import load_dotenv
 from visualizer import CalorieVisualizer
@@ -14,62 +15,69 @@ class CalorieTracker:
         self.master = master
         master.title("Calorie Tracking System")
 
-        # Connect to MySQL database
+        self.db = self.connect_to_database()
+        if not self.db:
+            master.destroy()
+            return
+
+        self.cursor = self.db.cursor(buffered=True)
+
+        self.create_gui_elements()
+        self.calorie_goal = self.get_calorie_goal()
+
+    def connect_to_database(self):
         try:
-            self.db = mysql.connector.connect(
+            db = mysql.connector.connect(
                 host=os.getenv("DB_HOST"),
                 user=os.getenv("DB_USER"),
                 password=os.getenv("DB_PASSWORD"),
                 database=os.getenv("DB_NAME")
             )
-            self.cursor = self.db.cursor(buffered=True)
+            return db
         except mysql.connector.Error as err:
             messagebox.showerror("Database Error", f"Error connecting to database: {err}")
-            master.destroy()
-            return
+            return None
 
-        # Create GUI elements
-        self.label = tk.Label(master, text="Enter meal details:")
+    def create_gui_elements(self):
+        self.label = tk.Label(self.master, text="Enter meal details:")
         self.label.pack()
 
-        self.meal_entry = tk.Entry(master)
+        self.meal_entry = tk.Entry(self.master)
         self.meal_entry.pack()
 
-        self.calories_entry = tk.Entry(master)
+        self.calories_entry = tk.Entry(self.master)
         self.calories_entry.pack()
 
-        self.add_button = tk.Button(master, text="Add Meal", command=self.add_meal)
-        self.add_button.pack()
-
-        self.view_button = tk.Button(master, text="View Today's Meals", command=self.view_meals)
-        self.view_button.pack()
-
-        self.visualize_button = tk.Button(master, text="Visualize Weekly Calories", command=self.visualize_weekly_calories)
-        self.visualize_button.pack()
-
-        self.set_goal_button = tk.Button(master, text="Set Calorie Goal", command=self.set_calorie_goal)
-        self.set_goal_button.pack()
-
-        self.view_goal_button = tk.Button(master, text="View Calorie Goal", command=self.view_calorie_goal)
-        self.view_goal_button.pack()
-
-        self.export_button = tk.Button(master, text="Export Data", command=self.export_data)
-        self.export_button.pack()
-
-        self.generate_report_button = tk.Button(master, text="Generate Report", command=self.generate_report)
-        self.generate_report_button.pack()
-
-        self.calorie_goal = self.get_calorie_goal()
-
-        self.datetime_label = tk.Label(master, text="Meal Date and Time:")
+        self.datetime_label = tk.Label(self.master, text="Meal Date and Time:")
         self.datetime_label.pack()
 
-        self.datetime_entry = DateEntry(master, width=12, background="darkblue", foreground="white", borderwidth=2)
+        self.datetime_entry = DateEntry(self.master, width=12, background="darkblue", foreground="white", borderwidth=2)
         self.datetime_entry.pack()
 
-        self.time_entry = tk.Entry(master)
+        self.time_entry = tk.Entry(self.master)
         self.time_entry.pack()
         self.time_entry.insert(0, "HH:MM")
+
+        self.add_button = tk.Button(self.master, text="Add Meal", command=self.add_meal)
+        self.add_button.pack()
+
+        self.view_button = tk.Button(self.master, text="View Today's Meals", command=self.view_meals)
+        self.view_button.pack()
+
+        self.visualize_button = tk.Button(self.master, text="Visualize Weekly Calories", command=self.visualize_weekly_calories)
+        self.visualize_button.pack()
+
+        self.set_goal_button = tk.Button(self.master, text="Set Calorie Goal", command=self.set_calorie_goal)
+        self.set_goal_button.pack()
+
+        self.view_goal_button = tk.Button(self.master, text="View Calorie Goal", command=self.view_calorie_goal)
+        self.view_goal_button.pack()
+
+        self.export_button = tk.Button(self.master, text="Export Data", command=self.export_data)
+        self.export_button.pack()
+
+        self.generate_report_button = tk.Button(self.master, text="Generate Report", command=self.generate_report)
+        self.generate_report_button.pack()
 
     def add_meal(self):
         meal = self.meal_entry.get()
@@ -140,7 +148,7 @@ class CalorieTracker:
     def check_calorie_goal(self):
         if self.calorie_goal:
             today = date.today()
-            query = "SELECT SUM(calories) FROM meals WHERE date = %s"
+            query = "SELECT SUM(calories) FROM meals WHERE DATE(datetime) = %s"
             self.cursor.execute(query, (today,))
             result = self.cursor.fetchone()
             total_calories = result[0] if result[0] else 0
@@ -150,14 +158,15 @@ class CalorieTracker:
     def export_data(self):
         file_path = filedialog.asksaveasfilename(defaultextension=".csv")
         if file_path:
-            query = "SELECT date, meal, calories FROM meals ORDER BY date"
+            query = "SELECT datetime, meal, calories FROM meals ORDER BY datetime"
             self.cursor.execute(query)
             results = self.cursor.fetchall()
 
             with open(file_path, 'w', newline='') as csvfile:
                 writer = csv.writer(csvfile)
-                writer.writerow(['Date', 'Meal', 'Calories'])
-                writer.writerows(results)
+                writer.writerow(['Date', 'Time', 'Meal', 'Calories'])
+                for row in results:
+                    writer.writerow([row[0].date(), row[0].strftime('%I:%M %p'), row[1], row[2]])
 
             messagebox.showinfo("Export Successful", f"Data exported to {file_path}")
 
@@ -166,11 +175,11 @@ class CalorieTracker:
         start_date = end_date - timedelta(days=30)
         
         query = """
-        SELECT date, SUM(calories) as total_calories
+        SELECT DATE(datetime) as date, SUM(calories) as total_calories
         FROM meals
-        WHERE date BETWEEN %s AND %s
-        GROUP BY date
-        ORDER BY date
+        WHERE DATE(datetime) BETWEEN %s AND %s
+        GROUP BY DATE(datetime)
+        ORDER BY DATE(datetime)
         """
         self.cursor.execute(query, (start_date, end_date))
         results = self.cursor.fetchall()
