@@ -61,38 +61,52 @@ class CalorieTracker:
 
         self.calorie_goal = self.get_calorie_goal()
 
+        self.datetime_label = tk.Label(master, text="Meal Date and Time:")
+        self.datetime_label.pack()
+
+        self.datetime_entry = DateEntry(master, width=12, background="darkblue", foreground="white", borderwidth=2)
+        self.datetime_entry.pack()
+
+        self.time_entry = tk.Entry(master)
+        self.time_entry.pack()
+        self.time_entry.insert(0, "HH:MM")
+
     def add_meal(self):
         meal = self.meal_entry.get()
         calories = self.calories_entry.get()
+        meal_date = self.datetime_entry.get_date()
+        meal_time = self.time_entry.get()
 
-        if meal and calories:
+        if meal and calories and meal_time:
             try:
                 calories = int(calories)
-                today = date.today()
-                query = "INSERT INTO meals (date, meal, calories) VALUES (%s, %s, %s)"
-                values = (today, meal, calories)
+                meal_datetime = datetime.combine(meal_date, datetime.strptime(meal_time, "%H:%M").time())
+                query = "INSERT INTO meals (datetime, meal, calories) VALUES (%s, %s, %s)"
+                values = (meal_datetime, meal, calories)
                 self.cursor.execute(query, values)
                 self.db.commit()
                 messagebox.showinfo("Success", "Meal added successfully!")
                 self.meal_entry.delete(0, tk.END)
                 self.calories_entry.delete(0, tk.END)
+                self.time_entry.delete(0, tk.END)
+                self.time_entry.insert(0, "HH:MM")
                 self.check_calorie_goal()
             except ValueError:
-                messagebox.showerror("Error", "Calories must be a number")
+                messagebox.showerror("Error", "Calories must be a number and time must be in HH:MM format")
             except mysql.connector.Error as err:
                 messagebox.showerror("Database Error", f"Error adding meal: {err}")
         else:
-            messagebox.showerror("Error", "Please enter both meal and calories")
+            messagebox.showerror("Error", "Please enter meal, calories, and time")
 
     def view_meals(self):
         today = date.today()
-        query = "SELECT meal, calories FROM meals WHERE date = %s"
+        query = "SELECT datetime, meal, calories FROM meals WHERE DATE(datetime) = %s ORDER BY datetime"
         self.cursor.execute(query, (today,))
         results = self.cursor.fetchall()
 
         if results:
-            meal_list = "\n".join([f"{meal}: {calories} calories" for meal, calories in results])
-            total_calories = sum(calories for _, calories in results)
+            meal_list = "\n".join([f"{meal_datetime.strftime('%I:%M %p')}: {meal} - {calories} calories" for meal_datetime, meal, calories in results])
+            total_calories = sum(calories for _, _, calories in results)
             messagebox.showinfo("Today's Meals", f"{meal_list}\n\nTotal Calories: {total_calories}")
         else:
             messagebox.showinfo("Today's Meals", "No meals logged for today")

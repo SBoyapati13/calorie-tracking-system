@@ -4,8 +4,8 @@ An interactive calorie tracking system built with Python and MySQL, featuring a 
 
 ## Features
 
-- Log meals with calorie information
-- View daily meal logs and total calorie intake
+- Log meals with calorie information and timestamps
+- View daily meal logs with meal times and total calorie intake
 - Visualize weekly calorie intake with a bar chart
 - Set and track daily calorie goals
 - Generate 30-day calorie reports
