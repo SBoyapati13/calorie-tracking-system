@@ -14,7 +14,7 @@ class CalorieTracker:
     def __init__(self, master):
         self.master = master
         master.title("Calorie Tracking System")
-        master.geometry("600x450")
+        master.geometry("600x550")
 
         self.db = self.connect_to_database()
         if not self.db:
@@ -41,84 +41,81 @@ class CalorieTracker:
         self.notebook = ttk.Notebook(self.master)
         self.notebook.pack(expand=True, fill="both", padx=10, pady=10)
 
-        self.add_meal_tab = ttk.Frame(self.notebook)
-        self.view_meals_tab = ttk.Frame(self.notebook)
+        self.meal_tab = ttk.Frame(self.notebook)
         self.visualize_tab = ttk.Frame(self.notebook)
         self.goals_tab = ttk.Frame(self.notebook)
         self.export_tab = ttk.Frame(self.notebook)
 
-        self.notebook.add(self.add_meal_tab, text="Add Meal")
-        self.notebook.add(self.view_meals_tab, text="View Meals")
+        self.notebook.add(self.meal_tab, text="Meals")
         self.notebook.add(self.visualize_tab, text="Visualize")
         self.notebook.add(self.goals_tab, text="Goals")
         self.notebook.add(self.export_tab, text="Export")
 
-        self.create_add_meal_tab()
-        self.create_view_meals_tab()
+        self.create_meal_tab()
         self.create_visualize_tab()
         self.create_goals_tab()
         self.create_export_tab()
 
-    def create_add_meal_tab(self):
-        frame = ttk.Frame(self.add_meal_tab, padding="10")
-        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
+    def create_meal_tab(self):
+        frame = ttk.Frame(self.meal_tab, padding="20")
+        frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
-        ttk.Label(frame, text="Meal:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        # Add Meal section
+        ttk.Label(frame, text="Add Meal", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
+
+        ttk.Label(frame, text="Meal:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.meal_entry = ttk.Entry(frame)
-        self.meal_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
+        self.meal_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5)
 
-        ttk.Label(frame, text="Calories:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text="Calories:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.calories_entry = ttk.Entry(frame)
-        self.calories_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5)
+        self.calories_entry.grid(row=2, column=1, sticky=(tk.W, tk.E), pady=5)
 
-        ttk.Label(frame, text="Date:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text="Date:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.datetime_entry = DateEntry(frame, width=12, background="darkblue", foreground="white", borderwidth=2)
-        self.datetime_entry.grid(row=2, column=1, sticky=(tk.W, tk.E), pady=5)
+        self.datetime_entry.grid(row=3, column=1, sticky=(tk.W, tk.E), pady=5)
 
-        ttk.Label(frame, text="Time:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text="Time:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.time_entry = ttk.Entry(frame)
         self.time_entry.insert(0, "HH:MM")
-        self.time_entry.grid(row=3, column=1, sticky=(tk.W, tk.E), pady=5)
+        self.time_entry.grid(row=4, column=1, sticky=(tk.W, tk.E), pady=5)
 
-        ttk.Button(frame, text="Add Meal", command=self.add_meal).grid(row=4, column=0, columnspan=2, pady=10)
+        ttk.Button(frame, text="Add Meal", command=self.add_meal).grid(row=5, column=0, columnspan=2, pady=10)
 
-    def create_view_meals_tab(self):
-        frame = ttk.Frame(self.view_meals_tab, padding="10")
-        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        frame.columnconfigure(0, weight=1)
-        frame.rowconfigure(0, weight=1)
+        # View Meals section
+        ttk.Label(frame, text="View Meals", font=("Arial", 14, "bold")).grid(row=6, column=0, columnspan=2, pady=10)
 
-        self.meals_text = tk.Text(frame, height=15, width=50)
-        self.meals_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.meals_tree = ttk.Treeview(frame, columns=("Date", "Time", "Meal", "Calories"), show="headings")
+        self.meals_tree.grid(row=7, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.meals_text.yview)
-        scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
-        self.meals_text.configure(yscrollcommand=scrollbar.set)
+        for col in self.meals_tree["columns"]:
+            self.meals_tree.heading(col, text=col)
+            self.meals_tree.column(col, width=100)
 
-        ttk.Button(frame, text="View Today's Meals", command=self.view_meals).grid(row=1, column=0, columnspan=2, pady=10)
+        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.meals_tree.yview)
+        scrollbar.grid(row=7, column=2, sticky=(tk.N, tk.S))
+        self.meals_tree.configure(yscrollcommand=scrollbar.set)
+
+        ttk.Button(frame, text="View Today's Meals", command=self.view_meals).grid(row=8, column=0, pady=10)
+        ttk.Button(frame, text="Delete Selected", command=self.delete_meal).grid(row=8, column=1, pady=10)
 
     def create_visualize_tab(self):
-        frame = ttk.Frame(self.visualize_tab, padding="10")
-        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        frame.columnconfigure(0, weight=1)
+        frame = ttk.Frame(self.visualize_tab, padding="20")
+        frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
         ttk.Button(frame, text="Visualize Weekly Calories", command=self.visualize_weekly_calories).grid(row=0, column=0, pady=10)
         ttk.Button(frame, text="Visualize Monthly Calories", command=self.visualize_monthly_calories).grid(row=1, column=0, pady=10)
 
     def create_goals_tab(self):
-        frame = ttk.Frame(self.goals_tab, padding="10")
-        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        frame.columnconfigure(0, weight=1)
+        frame = ttk.Frame(self.goals_tab, padding="20")
+        frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
         ttk.Button(frame, text="Set Calorie Goal", command=self.set_calorie_goal).grid(row=0, column=0, pady=10)
         ttk.Button(frame, text="View Calorie Goal", command=self.view_calorie_goal).grid(row=1, column=0, pady=10)
 
     def create_export_tab(self):
-        frame = ttk.Frame(self.export_tab, padding="10")
-        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        frame.columnconfigure(0, weight=1)
+        frame = ttk.Frame(self.export_tab, padding="20")
+        frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
         ttk.Button(frame, text="Export Data", command=self.export_data).grid(row=0, column=0, pady=10)
         ttk.Button(frame, text="Generate Report", command=self.generate_report).grid(row=1, column=0, pady=10)
@@ -138,6 +135,7 @@ class CalorieTracker:
                 self.db.commit()
                 messagebox.showinfo("Success", "Meal added successfully!")
                 self.clear_entries()
+                self.view_meals()
                 self.check_calorie_goal()
             except ValueError:
                 messagebox.showerror("Error", "Calories must be a number and time must be in HH:MM format")
@@ -153,19 +151,27 @@ class CalorieTracker:
         self.time_entry.insert(0, "HH:MM")
 
     def view_meals(self):
+        self.meals_tree.delete(*self.meals_tree.get_children())
         today = date.today()
-        query = "SELECT datetime, meal, calories FROM meals WHERE DATE(datetime) = %s ORDER BY datetime"
+        query = "SELECT id, datetime, meal, calories FROM meals WHERE DATE(datetime) = %s ORDER BY datetime"
         self.cursor.execute(query, (today,))
         results = self.cursor.fetchall()
 
-        self.meals_text.delete(1.0, tk.END)
-        if results:
-            for meal_datetime, meal, calories in results:
-                self.meals_text.insert(tk.END, f"{meal_datetime.strftime('%I:%M %p')}: {meal} - {calories} calories\n")
-            total_calories = sum(calories for _, _, calories in results)
-            self.meals_text.insert(tk.END, f"\nTotal Calories: {total_calories}")
+        for row in results:
+            meal_id, meal_datetime, meal, calories = row
+            self.meals_tree.insert("", "end", values=(meal_datetime.date(), meal_datetime.strftime('%I:%M %p'), meal, calories), tags=(meal_id,))
+
+    def delete_meal(self):
+        selected_item = self.meals_tree.selection()
+        if selected_item:
+            meal_id = self.meals_tree.item(selected_item)['tags'][0]
+            query = "DELETE FROM meals WHERE id = %s"
+            self.cursor.execute(query, (meal_id,))
+            self.db.commit()
+            self.meals_tree.delete(selected_item)
+            messagebox.showinfo("Success", "Meal deleted successfully!")
         else:
-            self.meals_text.insert(tk.END, "No meals logged for today")
+            messagebox.showwarning("Warning", "Please select a meal to delete.")
 
     def visualize_weekly_calories(self):
         visualizer = CalorieVisualizer()
@@ -209,7 +215,7 @@ class CalorieTracker:
                 messagebox.showwarning("Goal Exceeded", f"You've exceeded your daily calorie goal of {self.calorie_goal}")
 
     def export_data(self):
-        file_path = tk.filedialog.asksaveasfilename(defaultextension=".csv")
+        file_path = filedialog.asksaveasfilename(defaultextension=".csv")
         if file_path:
             query = "SELECT datetime, meal, calories FROM meals ORDER BY datetime"
             self.cursor.execute(query)
