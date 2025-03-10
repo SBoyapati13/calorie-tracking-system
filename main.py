@@ -96,6 +96,10 @@ class CalorieTracker(tk.Tk):
         scrollbar.grid(row=7, column=2, sticky="ns")
         self.meals_tree.configure(yscrollcommand=scrollbar.set)
 
+        self.view_date_entry = DateEntry(frame, width=12, background="darkblue", foreground="white", borderwidth=2)
+        self.view_date_entry.grid(row=8, column=0, pady=10, padx=5)
+        ttk.Button(frame, text="View Meals", command=self.view_meals).grid(row=8, column=1, pady=10, padx=5)
+
         ttk.Button(frame, text="View Today's Meals", command=self.view_meals).grid(row=8, column=0, pady=10)
         ttk.Button(frame, text="Delete Selected", command=self.delete_meal).grid(row=8, column=1, pady=10)
 
@@ -151,14 +155,14 @@ class CalorieTracker(tk.Tk):
 
     def view_meals(self):
         self.meals_tree.delete(*self.meals_tree.get_children())
-        today = date.today()
+        selected_date = self.view_date_entry.get_date()
         query = "SELECT id, datetime, meal, calories FROM meals WHERE DATE(datetime) = %s ORDER BY datetime"
-        self.cursor.execute(query, (today,))
+        self.cursor.execute(query, (selected_date,))
         results = self.cursor.fetchall()
 
         for row in results:
             meal_id, meal_datetime, meal, calories = row
-            self.meals_tree.insert("", "end", values=(meal_datetime.date(), meal_datetime.strftime('%I:%M %p'), meal, calories), tags=(meal_id,))
+            self.meals_tree.insert("", "end", values=(meal_datetime.strftime('%I:%M %p'), meal, calories), tags=(meal_id,))
 
     def delete_meal(self):
         selected_item = self.meals_tree.selection()
