@@ -14,7 +14,7 @@ class CalorieTracker(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Calorie Tracking System")
-        self.geometry("500x600")
+        self.geometry("550x650")
         self.configure(padx=10, pady=10)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -85,23 +85,23 @@ class CalorieTracker(tk.Tk):
 
         ttk.Label(frame, text="View Meals", font=("Arial", 14, "bold")).grid(row=6, column=0, columnspan=2, pady=10)
 
+        ttk.Label(frame, text="Select Date:").grid(row=7, column=0, sticky="w", pady=5)
+        self.view_date_entry = DateEntry(frame, width=12, background="darkblue", foreground="white", borderwidth=2)
+        self.view_date_entry.grid(row=7, column=1, sticky="ew", pady=5)
+
         self.meals_tree = ttk.Treeview(frame, columns=("Date", "Time", "Meal", "Calories"), show="headings")
-        self.meals_tree.grid(row=7, column=0, columnspan=2, sticky="nsew")
+        self.meals_tree.grid(row=8, column=0, columnspan=2, sticky="nsew")
 
         for col in self.meals_tree["columns"]:
             self.meals_tree.heading(col, text=col)
             self.meals_tree.column(col, width=100)
 
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.meals_tree.yview)
-        scrollbar.grid(row=7, column=2, sticky="ns")
+        scrollbar.grid(row=8, column=2, sticky="ns")
         self.meals_tree.configure(yscrollcommand=scrollbar.set)
 
-        self.view_date_entry = DateEntry(frame, width=12, background="darkblue", foreground="white", borderwidth=2)
-        self.view_date_entry.grid(row=8, column=0, pady=10, padx=5)
-        ttk.Button(frame, text="View Meals", command=self.view_meals).grid(row=8, column=1, pady=10, padx=5)
-
-        ttk.Button(frame, text="View Today's Meals", command=self.view_meals).grid(row=8, column=0, pady=10)
-        ttk.Button(frame, text="Delete Selected", command=self.delete_meal).grid(row=8, column=1, pady=10)
+        ttk.Button(frame, text="View Meals", command=self.view_meals).grid(row=9, column=0, pady=10)
+        ttk.Button(frame, text="Delete Selected", command=self.delete_meal).grid(row=9, column=1, pady=10)
 
     def create_visualize_tab(self):
         frame = ttk.Frame(self.visualize_tab, padding="20")
@@ -162,7 +162,7 @@ class CalorieTracker(tk.Tk):
 
         for row in results:
             meal_id, meal_datetime, meal, calories = row
-            self.meals_tree.insert("", "end", values=(meal_datetime.strftime('%I:%M %p'), meal, calories), tags=(meal_id,))
+            self.meals_tree.insert("", "end", values=(meal_datetime.date(), meal_datetime.strftime('%I:%M %p'), meal, calories), tags=(meal_id,))
 
     def delete_meal(self):
         selected_item = self.meals_tree.selection()
