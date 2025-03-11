@@ -5,7 +5,7 @@ import mysql.connector
 from datetime import datetime, date, timedelta
 import os
 from dotenv import load_dotenv
-from visualizer import CalorieVisualizer
+from visualizer import CalorieVisualizer  # Import CalorieVisualizer
 import csv
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -16,7 +16,7 @@ class CalorieTracker(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Calorie Tracking System")
-        self.geometry("650x650")
+        self.geometry("600x600")  # Increased height
         self.db = self.connect_to_database()
         if not self.db:
             self.destroy()
@@ -228,27 +228,28 @@ class CalorieTracker(tk.Tk):
         self.update_goal_tab()
 
     def show_weekly_calories(self):
-         self.visualize_calories(7, "Weekly Calorie Intake")
+        self.visualize_calories(7, "Weekly Calorie Intake")
 
     def show_monthly_calories(self):
         self.visualize_calories(30, "Monthly Calorie Intake")
+
     def visualize_calories(self, days, title):
         # Clear any previous chart
         for widget in self.chart_frame.winfo_children():
             widget.destroy()
 
-        # Fetch the data
-        end_date = datetime.now().date()
+        # Fetch the data from daily_calories table
+        end_date = date.today()
         start_date = end_date - timedelta(days=days - 1)
         query = """
-            SELECT DATE(datetime) as date, SUM(calories) as total_calories
-            FROM meals
-            WHERE DATE(datetime) BETWEEN %s AND %s
-            GROUP BY DATE(datetime)
-            ORDER BY DATE(datetime)
+            SELECT date, total_calories
+            FROM daily_calories
+            WHERE date BETWEEN %s AND %s
+            ORDER BY date
         """
         self.cursor.execute(query, (start_date, end_date))
         results = self.cursor.fetchall()
+
         # Prepare the data
         dates = [row[0] for row in results]
         calories = [row[1] for row in results]
@@ -297,10 +298,10 @@ class CalorieTracker(tk.Tk):
     def check_calorie_goal(self):
         if self.calorie_goal:
             today = date.today()
-            query = "SELECT SUM(calories) FROM meals WHERE DATE(datetime) = %s"
+            query = "SELECT total_calories FROM daily_calories WHERE date = %s"
             self.cursor.execute(query, (today,))
             result = self.cursor.fetchone()
-            total_calories = result[0] if result[0] else 0
+            total_calories = result[0] if result else 0
             if total_calories > self.calorie_goal:
                 self.show_message(f"You've exceeded your daily calorie goal of {self.calorie_goal}", "warning")
 
@@ -324,11 +325,10 @@ class CalorieTracker(tk.Tk):
         start_date = end_date - timedelta(days=30)
         
         query = """
-        SELECT DATE(datetime) as date, SUM(calories) as total_calories
-        FROM meals
-        WHERE DATE(datetime) BETWEEN %s AND %s
-        GROUP BY DATE(datetime)
-        ORDER BY DATE(datetime)
+        SELECT date, total_calories
+        FROM daily_calories
+        WHERE date BETWEEN %s AND %s
+        ORDER BY date
         """
         self.cursor.execute(query, (start_date, end_date))
         results = self.cursor.fetchall()
@@ -354,41 +354,41 @@ class CalorieTracker(tk.Tk):
             messagebox.showwarning("Warning", message)
 
     def update_goal_tab(self):
-      if self.calorie_goal is not None:
-        self.goal_value_label.config(text=str(self.calorie_goal))
-      else:
-        self.goal_value_label.config(text="Not Set")
-      today = date.today()
-      query = "SELECT SUM(calories) FROM meals WHERE DATE(datetime) = %s"
-      self.cursor.execute(query, (today,))
-      result = self.cursor.fetchone()
-      total_calories = result[0] if result and result[0] is not None else 0
-      self.today_calories_value_label.config(text=str(total_calories))
-      self.create_pie_chart(total_calories)
+        if self.calorie_goal is not None:
+            self.goal_value_label.config(text=str(self.calorie_goal))
+        else:
+            self.goal_value_label.config(text="Not Set")
+        today = date.today()
+        query = "SELECT total_calories FROM daily_calories WHERE date = %s"
+        self.cursor.execute(query, (today,))
+        result = self.cursor.fetchone()
+        total_calories = result[0] if result and result[0] is not None else 0
+        self.today_calories_value_label.config(text=str(total_calories))
+        self.create_pie_chart(total_calories)
 
     def create_pie_chart(self, total_calories):
-      #Clear chart
-      for widget in self.pie_chart_frame.winfo_children():
-          widget.destroy()
+        #Clear chart
+        for widget in self.pie_chart_frame.winfo_children():
+            widget.destroy()
 
-      if self.calorie_goal is None:
-          return
+        if self.calorie_goal is None:
+            return
 
-      remaining_calories = max(0, self.calorie_goal - total_calories)
+        remaining_calories = max(0, self.calorie_goal - total_calories)
 
-      labels = 'Calories Consumed', 'Remaining Calories'
-      sizes = [total_calories, remaining_calories]
-      colors = ['gold', 'lightskyblue']
-      explode = (0.1, 0)  # explode 1st slice
+        labels = 'Calories Consumed', 'Remaining Calories'
+        sizes = [total_calories, remaining_calories]
+        colors = ['gold', 'lightskyblue']
+        explode = (0.1, 0)  # explode 1st slice
 
-      fig, ax = plt.subplots(figsize=(6, 4))
-      ax.pie(sizes, explode=explode, labels=labels, colors=colors,
-              autopct='%1.1f%%', shadow=True, startangle=140)
-      ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-      chart = FigureCanvasTkAgg(fig, master=self.pie_chart_frame)
-      chart.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-      chart.draw()
-      plt.close(fig)
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.pie(sizes, explode=explode, labels=labels, colors=colors,
+                autopct='%1.1f%%', shadow=True, startangle=140)
+        ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        chart = FigureCanvasTkAgg(fig, master=self.pie_chart_frame)
+        chart.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        chart.draw()
+        plt.close(fig)
 
 if __name__ == "__main__":
     app = CalorieTracker()
