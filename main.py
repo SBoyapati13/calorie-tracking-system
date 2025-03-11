@@ -27,6 +27,7 @@ class CalorieTracker(tk.Tk):
         self.cursor = self.db.cursor(buffered=True)
         self.calorie_goal = self.get_calorie_goal()
         self.create_widgets()
+        self.preload_meals()
 
     def connect_to_database(self):
         try:
@@ -168,7 +169,7 @@ class CalorieTracker(tk.Tk):
 
         for row in results:
             meal_id, meal_datetime, meal, calories = row
-            self.meals_tree.insert("", "end", values=(meal_datetime.date(), meal_datetime.strftime('%I:%M %p'), meal, calories), tags=(meal_id,))
+            self.meals_tree.insert("", "end", values=(meal_datetime.strftime('%I:%M %p'), meal, calories), tags=(meal_id,))
 
     def delete_meal(self):
         selected_item = self.meals_tree.selection()
@@ -181,6 +182,11 @@ class CalorieTracker(tk.Tk):
             self.show_message("Meal deleted successfully", "info")
         else:
             self.show_message("Please select a meal to delete", "warning")
+
+    def preload_meals(self):
+        today = date.today()
+        self.view_date_entry.set_date(today)
+        self.view_meals()
 
     def visualize_weekly_calories(self, frame):
         for widget in self.graph_frame.winfo_children():
